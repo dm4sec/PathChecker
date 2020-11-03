@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="sootclasses-trunk-jar-with-dependencies">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/sootclasses-trunk-jar-with-dependencies.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

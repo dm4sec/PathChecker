@@ -1,6 +1,8 @@
 package PathChecker;
 
 import soot.*;
+import soot.jimple.infoflow.entryPointCreators.BaseEntryPointCreator;
+import soot.jimple.infoflow.entryPointCreators.SequentialEntryPointCreator;
 import soot.jimple.spark.SparkTransformer;
 import soot.options.Options;
 
@@ -23,7 +25,7 @@ public class PathChecker {
         // System.out.println(entries);
 
         for (Map.Entry<String, String> entry : HuaweiFastAppConfig.getEntries().entrySet()) {
-            logInfo.info("Setting entry, class: " + entry.getKey() + ", method: " + entry.getValue());
+            logInfo.info("Processing entry, class: " + entry.getKey() + ", method: " + entry.getValue());
 
             soot.G.reset();
 
@@ -40,15 +42,20 @@ public class PathChecker {
             // Options.v().set_verbose(true);
             Options.v().set_output_format(Options.output_format_none);
             Options.v().set_no_bodies_for_excluded(true);
+            Options.v().setPhaseOption("cg.spark", "on");
 
-            // enableSpark();
+            enableSpark();
 
             // set Scene
             Scene.v().loadNecessaryClasses();
             Scene.v().loadBasicClasses();
 
-            if (loadClass(entry.getKey(), entry.getValue()) == false)
-                continue;
+            SootMethod dummyMethod = GenerateDummyClass.doGenerate(entry.getKey(), entry.getValue());
+            if(dummyMethod == null)
+                return;
+            ArrayList entryPoints = new ArrayList();
+            entryPoints.add(dummyMethod);
+            Scene.v().setEntryPoints(entryPoints);
 
             PackManager.v().getPack("wjtp").add(
                     new Transform("wjtp.DomChecker", new Checker()));
@@ -58,44 +65,14 @@ public class PathChecker {
             // start packs analyse
             PackManager.v().runPacks();
 
+
         }
         logInfo.info("Finish verifying the path.");
         Stat.dumpInfo();
 
     }
 
-    // TODO:: Set in a batch mode? (if the call graph inflate will not change the relationship.)
-    private static boolean loadClass(String classNameSignature, String methodSignature) {
-        SootClass c = Scene.v().loadClassAndSupport(classNameSignature);
-        c.setApplicationClass();
-
-//        for(SootClass cc: Scene.v().getApplicationClasses())
-//        {
-//            logInfo.info(cc.toString());
-//        }
-
-        if (c.declaresMethod(methodSignature) == false)
-        {
-            logInfo.warning("Cannot find method: " + methodSignature);
-            logInfo.warning("Alternative methods list:");
-
-            for (SootMethod m: c.getMethods())
-                logInfo.warning(m.toString());
-            return false;
-        }
-
-        // Scene.v().setMainClass(c);
-        SootMethod m = c.getMethod(methodSignature);
-        // SootMethod m = c.getMethodByName();
-        ArrayList entryPoints = new ArrayList();
-        entryPoints.add(m);
-        Options.v().set_main_class(m.getSignature());
-        Scene.v().setEntryPoints(entryPoints);
-        return true;
-    }
-
     private static void enableSpark() {
-        Options.v().setPhaseOption("cg.spark", "on");
         HashMap opt = new HashMap();
         opt.put("verbose", "true");
         opt.put("propagator", "worklist");

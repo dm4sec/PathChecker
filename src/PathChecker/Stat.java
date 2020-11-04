@@ -17,7 +17,8 @@ public class Stat {
     static long analysisStart = 0;
     static long analysisEnd = 0;
 
-    static void dumpGraph(BriefUnitGraph briefUnitGraph, List<SootMethod> mEntries, Body body)
+    static void dumpGraph(BriefUnitGraph briefUnitGraph,
+                          List<SootMethod> mEntries, Body body)
     {
         // For debugging.
         // time consuming, remove these codes if needed.

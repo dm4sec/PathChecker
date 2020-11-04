@@ -23,7 +23,6 @@ public class Checker extends SceneTransformer{
     InterproceduralCFG<Unit, SootMethod> icfg = null;
 
     private static Logger logInfo = Logger.getLogger("PathChecker");
-    private static int MaxDeepth = 5;       // set the max inflate deepth to avoid memory corruption.
 
     @Override
     protected void internalTransform(String s, Map<String, String> map) {
@@ -60,7 +59,7 @@ public class Checker extends SceneTransformer{
         // I set only one entry
         Body bEntry = mEntries.get(0).getActiveBody();
         this.icfg = new JimpleBasedInterproceduralCFG(false, true);
-        // this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
+        //this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
         this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
         this.inflateGraph();
 
@@ -156,8 +155,7 @@ public class Checker extends SceneTransformer{
                         {
                             continue;
                         }
-                        if(deepth < this.MaxDeepth)
-                            this.collectConnectTuple(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
+                        this.collectConnectTuple(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
                     }
                 }
             }
@@ -243,8 +241,7 @@ public class Checker extends SceneTransformer{
                             continue;
                         }
 
-                        if(deepth < this.MaxDeepth)
-                            this.collectConnectTupleCG(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
+                        this.collectConnectTupleCG(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
                     }
                 }
             }

@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 public class PathChecker {
 
-    private static Logger logInfo = Logger.getLogger("Info");
+    private static Logger logInfo = Logger.getLogger("PathChecker");
 
     public static void main(String[] args) {
 
@@ -65,10 +65,16 @@ public class PathChecker {
 
     }
 
-    // TODO:: Set in a batch mode? (if the call graph inflactor will not change the relationship.)
+    // TODO:: Set in a batch mode? (if the call graph inflate will not change the relationship.)
     private static boolean loadClass(String classNameSignature, String methodSignature) {
         SootClass c = Scene.v().loadClassAndSupport(classNameSignature);
         c.setApplicationClass();
+
+//        for(SootClass cc: Scene.v().getApplicationClasses())
+//        {
+//            logInfo.info(cc.toString());
+//        }
+
         if (c.declaresMethod(methodSignature) == false)
         {
             logInfo.warning("Cannot find method: " + methodSignature);
@@ -99,6 +105,7 @@ public class PathChecker {
         opt.put("set-impl", "double");
         opt.put("double-set-old", "hybrid");
         opt.put("double-set-new", "hybrid");
+        opt.put("enabled", "true");
         SparkTransformer.v().transform("", opt);
     }
 }

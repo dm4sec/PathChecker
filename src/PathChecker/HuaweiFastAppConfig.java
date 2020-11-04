@@ -7,22 +7,22 @@ import java.util.HashMap;
 public class HuaweiFastAppConfig {
     private static final ArrayList<String> processDir = new ArrayList<String>();
     private static HashMap<String, String> entries = new HashMap<String, String> ();
-    private static ArrayList<String> target = new ArrayList<String> ();
     private static ArrayList<String> sanitizer = new ArrayList<String> ();
+    private static ArrayList<String> target = new ArrayList<String> ();
 
     // put the collected information here
     static {
         // processDir.add("./testcase/fy_lucky.jar");
         processDir.add("./testcase/com.huawei.fastapp.dev.apk");
 
-        entries.put("com.huawei.fastapp.api.module.image.ImageModule",
-                "void getExifAttributes(com.alibaba.fastjson.JSONObject,com.taobao.weex.bridge.JSCallback)");
+        entries.put("com.huawei.fastapp.app.management.ui.FastAppCenterActivity",
+                "void onCreate(android.os.Bundle)");
 
-        sanitizer.add("lr");
-        sanitizer.add("java.lang.String a(com.taobao.weex.WXSDKInstance,java.lang.String)");
+        sanitizer.add("ix");
+        sanitizer.add("void a(android.app.Activity,int)");
 
-        target.add("com.huawei.fastapp.api.module.image.ImageModule");
-        target.add("void getExifFromAttributes(androidx.exifinterface.media.ExifInterface,java.util.HashMap[],com.alibaba.fastjson.JSONObject)");
+        target.add("com.huawei.fastapp.app.management.ui.FastAppCenterActivity");
+        target.add("void initView()");
     }
 
     public static ArrayList<String> getEntities()

@@ -21,8 +21,8 @@ public class Stat {
     {
         // For debugging.
         // time consuming, remove these codes if needed.
-        if(true)
-            return;
+        // if(true)
+        //     return;
 
         CFGToDotGraph cfgToDotGraph = new CFGToDotGraph();
         DotGraph dotGraph = cfgToDotGraph.drawCFG(briefUnitGraph, body);

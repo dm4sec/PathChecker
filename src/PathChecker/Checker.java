@@ -23,6 +23,7 @@ public class Checker extends SceneTransformer{
     InterproceduralCFG<Unit, SootMethod> icfg = null;
 
     private static Logger logInfo = Logger.getLogger("PathChecker");
+    private static int MaxDeepth = 5;       // set the max inflate deepth to avoid memory corruption.
 
     @Override
     protected void internalTransform(String s, Map<String, String> map) {
@@ -59,8 +60,8 @@ public class Checker extends SceneTransformer{
         // I set only one entry
         Body bEntry = mEntries.get(0).getActiveBody();
         this.icfg = new JimpleBasedInterproceduralCFG(false, true);
-        // this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null);
-        this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null);
+        // this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
+        this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
         this.inflateGraph();
 
         BriefUnitGraph briefUnitGraph = new BriefUnitGraph(this.wholeShadowBody);
@@ -85,7 +86,7 @@ public class Checker extends SceneTransformer{
     Map<Unit, UnitPatchingChain> callStmtWorkList = new LinkedHashMap<Unit, UnitPatchingChain>();
     Map<Unit, Unit> exitStmtWorkList = new LinkedHashMap<Unit, Unit>();
 
-    public Body collectConnectTuple(Body body, Unit parentUnit, Unit parentUnitSucc)
+    public Body collectConnectTuple(Body body, Unit parentUnit, Unit parentUnitSucc, int deepth)
     {
         logInfo.info("Processing method: " + body.getMethod().toString());
 
@@ -122,7 +123,11 @@ public class Checker extends SceneTransformer{
                 {
                     // Since the framework APIs will inflate the graph greatly, I filter out the these APIs firstly.
                     if(callee.getDeclaringClass().isApplicationClass()) {
-                    // if(true) {
+                        // native method?
+                        // <com.facebook.imagepipeline.memory.NativeMemoryChunk: void close()>
+                        if(callee.hasActiveBody() == false)
+                            continue;
+                        // if(true) {
                         // logInfo.info("Application class: " + callee.toString());
                         // System.out.println("[I] -> " + callee.toString());
                         /*
@@ -151,8 +156,8 @@ public class Checker extends SceneTransformer{
                         {
                             continue;
                         }
-
-                        this.collectConnectTuple(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit));
+                        if(deepth < this.MaxDeepth)
+                            this.collectConnectTuple(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
                     }
                 }
             }
@@ -166,9 +171,9 @@ public class Checker extends SceneTransformer{
         return shadowBody;
     }
 
-    public Body collectConnectTupleCG(Body body, Unit parentUnit, Unit parentUnitSucc)
+    public Body collectConnectTupleCG(Body body, Unit parentUnit, Unit parentUnitSucc, int deepth)
     {
-        logInfo.info("Processing method: " + body.getMethod().toString());
+        logInfo.info("(" + deepth + ") Processing method: " + body.getMethod().toString());
 
         CallGraph cg = Scene.v().getCallGraph();
         // Use call graph instead
@@ -203,6 +208,10 @@ public class Checker extends SceneTransformer{
                     SootMethod callee = iterCallees.next().tgt().method();
                     // Since the framework APIs will inflate the graph greatly, I filter out the these APIs firstly.
                     if (callee.getDeclaringClass().isApplicationClass()) {
+                        // native method?
+                        // <com.facebook.imagepipeline.memory.NativeMemoryChunk: void close()>
+                        if(callee.hasActiveBody() == false)
+                            continue;
                         // if(true) {
                         // logInfo.info("Application class: " + callee.toString());
                         // System.out.println("[I] -> " + callee.toString());
@@ -234,7 +243,8 @@ public class Checker extends SceneTransformer{
                             continue;
                         }
 
-                        this.collectConnectTupleCG(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit));
+                        if(deepth < this.MaxDeepth)
+                            this.collectConnectTupleCG(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
                     }
                 }
             }
@@ -339,11 +349,11 @@ public class Checker extends SceneTransformer{
         }
 
         if(lstUnitSanitizers.size() == 0) {
-            logInfo.warning("Can't find sanitizer: " + stringSanitizer);
+            logInfo.warning("Can't find sanitizer: " + stringSanitizer + ", adjust the sanitizer definition or set the threshold of MaxDeepth.");
             return;
         }
         if(lstUnitTargets.size() == 0) {
-            logInfo.warning("Can't find target: " + stringTarget);
+            logInfo.warning("Can't find target: " + stringTarget + ", adjust the target definition or set the threshold of MaxDeepth");
             return;
         }
 

@@ -39,10 +39,9 @@ public class PathChecker {
             Options.v().set_allow_phantom_refs(true);
             // Options.v().set_verbose(true);
             Options.v().set_output_format(Options.output_format_none);
-            Options.v().setPhaseOption("cg.spark", "on");
             Options.v().set_no_bodies_for_excluded(true);
-            // Options.v().set_app(true);
-            enableSpark();
+
+            // enableSpark();
 
             // set Scene
             Scene.v().loadNecessaryClasses();
@@ -90,12 +89,13 @@ public class PathChecker {
         // SootMethod m = c.getMethodByName();
         ArrayList entryPoints = new ArrayList();
         entryPoints.add(m);
+        Options.v().set_main_class(m.getSignature());
         Scene.v().setEntryPoints(entryPoints);
-
         return true;
     }
 
     private static void enableSpark() {
+        Options.v().setPhaseOption("cg.spark", "on");
         HashMap opt = new HashMap();
         opt.put("verbose", "true");
         opt.put("propagator", "worklist");
@@ -106,6 +106,7 @@ public class PathChecker {
         opt.put("double-set-old", "hybrid");
         opt.put("double-set-new", "hybrid");
         opt.put("enabled", "true");
+
         SparkTransformer.v().transform("", opt);
     }
 }

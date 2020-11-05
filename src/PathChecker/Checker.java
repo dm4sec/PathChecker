@@ -59,8 +59,8 @@ public class Checker extends SceneTransformer{
         // I set only one entry
         Body bEntry = mEntries.get(0).getActiveBody();
         this.icfg = new JimpleBasedInterproceduralCFG(false, true);
-        //this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
-        this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
+        this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
+        //this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
         this.inflateGraph();
 
         BriefUnitGraph briefUnitGraph = new BriefUnitGraph(this.wholeShadowBody);
@@ -87,8 +87,8 @@ public class Checker extends SceneTransformer{
 
     public Body collectConnectTuple(Body body, Unit parentUnit, Unit parentUnitSucc, int deepth)
     {
-        logInfo.info("Processing method: " + body.getMethod().toString());
-
+        logInfo.info("(" + deepth + ") Processing class: " + body.getMethod().getDeclaringClass().toString());
+        logInfo.info("(" + deepth + ") Processing method: " + body.getMethod().toString());
         // it's more reliable to use InterproceduralCFG to find the callee.
         // However, the cloned body does not contain such information.
         // Work on a clone, however reference the original ICFG.
@@ -150,6 +150,34 @@ public class Checker extends SceneTransformer{
                             continue;
                         }
 
+                        /*
+                        // other recursive invocation case, I build a black list to solve this problem
+                        <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class)> ->
+                        <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class,java.lang.reflect.Method[])>
+
+                        <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class,java.lang.reflect.Method[])> ->
+                        <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class)>
+                         */
+
+//                        if(callee.toString().contains("androidx.lifecycle.a: androidx.lifecycle.a$a"))
+//                        {
+//                            System.out.println("GOCHA");
+//                            System.out.println(unit.getJavaSourceStartLineNumber());
+//                            System.out.println(callee.toString());
+//                            System.out.println(body.getMethod().toString());
+//
+//                        }
+
+                        boolean bc = false;
+                        for(String b: HuaweiFastAppConfig.getBlacklist())
+                        {
+                            if(callee.toString().startsWith(b))
+                            {
+                                bc = true;
+                            }
+                        }
+                        if(bc) continue;
+
                         // Do not inflate the sanitizer and target node to shrink the resource consumption.
                         if(callee == this.methodSanitizer || callee == this.methodTarget)
                         {
@@ -171,6 +199,7 @@ public class Checker extends SceneTransformer{
 
     public Body collectConnectTupleCG(Body body, Unit parentUnit, Unit parentUnitSucc, int deepth)
     {
+        logInfo.info("(" + deepth + ") Processing class: " + body.getMethod().getDeclaringClass().toString());
         logInfo.info("(" + deepth + ") Processing method: " + body.getMethod().toString());
 
         CallGraph cg = Scene.v().getCallGraph();

@@ -28,7 +28,7 @@ public class GenerateDummyClass {
             return null;
         }
 
-        // invoke soot to generate a dummy method
+        // invoke flowdroid to generate a dummy method
         List<String> e = new ArrayList<String>();
         e.add("<" + classNameSignature + ": " + methodSignature + ">");
         SequentialEntryPointCreator sequentialEntryPointCreator = new SequentialEntryPointCreator(e);

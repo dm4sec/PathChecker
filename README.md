@@ -18,6 +18,11 @@ APK file (or a JAR file).
 3. Collect all sanitizers.  
 (all these 3 steps can be done manually or automatically.)
 
+**Remark 1**:
+When using the *JimpleBasedInterproceduralCFG*, pay special attention to the exception handler in the graph. It may violate the domination and you should check the exception handler deliberately to verify the integrity.  
+**Remark 2**:
+Be cautious not to dumpGraph all the time, or it will crash the application.
+ 
 ## TODO
 1. There are quirks when dealing with the \<cinit\> method.
 2. Since I inflate the graph (inline but not context-sensitive), the *b* may not dominate *c* anymore.

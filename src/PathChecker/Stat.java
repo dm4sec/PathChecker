@@ -4,6 +4,7 @@ import soot.Body;
 import soot.SootMethod;
 import soot.Unit;
 import soot.toolkits.graph.BriefUnitGraph;
+import soot.toolkits.graph.UnitGraph;
 import soot.util.cfgcmd.CFGToDotGraph;
 import soot.util.dot.DotGraph;
 
@@ -17,7 +18,7 @@ public class Stat {
     static long analysisStart = 0;
     static long analysisEnd = 0;
 
-    static void dumpGraph(BriefUnitGraph briefUnitGraph,
+    static void dumpGraph(UnitGraph unitGraph,
                           List<SootMethod> mEntries, Body body)
     {
         // For debugging.
@@ -26,7 +27,7 @@ public class Stat {
         //     return;
 
         CFGToDotGraph cfgToDotGraph = new CFGToDotGraph();
-        DotGraph dotGraph = cfgToDotGraph.drawCFG(briefUnitGraph, body);
+        DotGraph dotGraph = cfgToDotGraph.drawCFG(unitGraph, body);
 
         dotGraph.plot(mEntries.get(0).getDeclaringClass().getName() + "_" + mEntries.get(0).getName() + ".dot");
 
@@ -48,7 +49,7 @@ public class Stat {
     static String target = null;
     static boolean result = true;
 
-    static void setResult(Unit s, Unit t, boolean res)
+    static void setResult(Unit t, Unit s, boolean res)
     {
         sanitizer = s.toString();
         target = t.toString();
@@ -56,9 +57,9 @@ public class Stat {
     }
 
     static int graphSize = 0;
-    static void setGraphInfo(BriefUnitGraph briefUnitGraph)
+    static void setGraphInfo(UnitGraph unitGraph)
     {
-        graphSize = briefUnitGraph.size();
+        graphSize = unitGraph.size();
     }
 
     static void dumpInfo()

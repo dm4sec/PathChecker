@@ -7,6 +7,7 @@ import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.toolkits.graph.*;
+import soot.toolkits.graph.pdg.EnhancedUnitGraph;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -59,18 +60,21 @@ public class Checker extends SceneTransformer{
         // I set only one entry
         Body bEntry = mEntries.get(0).getActiveBody();
         this.icfg = new JimpleBasedInterproceduralCFG(false, true);
-        this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
-        //this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
+        // this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
+        this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
         this.inflateGraph();
 
-        BriefUnitGraph briefUnitGraph = new BriefUnitGraph(this.wholeShadowBody);
+        // BriefUnitGraph unitGraph = new BriefUnitGraph(this.wholeShadowBody);
+        EnhancedUnitGraph unitGraph = new EnhancedUnitGraph(this.wholeShadowBody);
+        // ExceptionalUnitGraph
+        // TrapUnitGraph
 
-        checkDominate(briefUnitGraph);
+        checkDominate(unitGraph);
 
         logInfo.info("Finish inflating the CFG.");
 
-        Stat.setGraphInfo(briefUnitGraph);
-        Stat.dumpGraph(briefUnitGraph, mEntries, this.wholeShadowBody);
+        Stat.setGraphInfo(unitGraph);
+        Stat.dumpGraph(unitGraph, mEntries, this.wholeShadowBody);
         Stat.setAnalysisEnd();
     }
 
@@ -265,6 +269,16 @@ public class Checker extends SceneTransformer{
                             continue;
                         }
 
+                        boolean bc = false;
+                        for(String b: HuaweiFastAppConfig.getBlacklist())
+                        {
+                            if(callee.toString().startsWith(b))
+                            {
+                                bc = true;
+                            }
+                        }
+                        if(bc) continue;
+
                         // Do not inflate the sanitizer and target node to shrink the resource consumption.
                         if (callee == this.methodSanitizer || callee == this.methodTarget) {
                             continue;
@@ -337,7 +351,7 @@ public class Checker extends SceneTransformer{
 
     }
 
-    public void checkDominate(BriefUnitGraph unitGraph)
+    public void checkDominate(UnitGraph unitGraph)
     {
         List<Unit> lstUnitSanitizers = new ArrayList<Unit>();
         List<Unit> lstUnitTargets = new ArrayList<Unit>();

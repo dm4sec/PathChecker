@@ -59,17 +59,17 @@ public class Checker extends SceneTransformer{
 
         // I set only one entry
         Body bEntry = mEntries.get(0).getActiveBody();
-        this.icfg = new JimpleBasedInterproceduralCFG(false, true);
+        // this.icfg = new JimpleBasedInterproceduralCFG(false, true);
         // this.wholeShadowBody = this.collectConnectTuple(bEntry, null, null, 0);
         this.wholeShadowBody = this.collectConnectTupleCG(bEntry, null, null, 0);
         this.inflateGraph();
 
-        // BriefUnitGraph unitGraph = new BriefUnitGraph(this.wholeShadowBody);
-        EnhancedUnitGraph unitGraph = new EnhancedUnitGraph(this.wholeShadowBody);
+        BriefUnitGraph unitGraph = new BriefUnitGraph(this.wholeShadowBody);
+        // EnhancedUnitGraph unitGraph = new EnhancedUnitGraph(this.wholeShadowBody);
         // ExceptionalUnitGraph
         // TrapUnitGraph
 
-        checkDominate(unitGraph);
+        this.checkDominate(unitGraph);
 
         logInfo.info("Finish inflating the CFG.");
 
@@ -117,18 +117,23 @@ public class Checker extends SceneTransformer{
                 logInfo.warning("Change the shadow unit scheme.");
             }
 
-            // logInfo.info("Walk: " + unit.toString());
-
-            if(this.icfg.isCallStmt(unit)){
+            /*
+            if(unit.toString().contains("lr")) {
+                logInfo.info("Walk: " + unit.toString());
+                System.out.println(this.icfg.isCallStmt(unit));
+            }
+            INFO: Walk: $r10 = staticinvoke <lr: java.lang.String a(com.taobao.weex.WXSDKInstance,java.lang.String)>($r9, $r8)
+            true
+             */
+            if(this.icfg.isCallStmt(unit)) {
                 // System.out.println("[I]" + u.toString());
                 // logInfo.info("Call stmt: " + unit.toString());
-                for(SootMethod callee: this.icfg.getCalleesOfCallAt(unit))
-                {
+                for (SootMethod callee : this.icfg.getCalleesOfCallAt(unit)) {
                     // Since the framework APIs will inflate the graph greatly, I filter out the these APIs firstly.
-                    if(callee.getDeclaringClass().isApplicationClass()) {
+                    if (callee.getDeclaringClass().isApplicationClass()) {
                         // native method?
                         // <com.facebook.imagepipeline.memory.NativeMemoryChunk: void close()>
-                        if(callee.hasActiveBody() == false)
+                        if (callee.hasActiveBody() == false)
                             continue;
                         // if(true) {
                         // logInfo.info("Application class: " + callee.toString());
@@ -141,16 +146,15 @@ public class Checker extends SceneTransformer{
 
                         One anchor for two calls will make the problem complex, I take a simplified solution for this case. Should fix later.
                          */
-                        if(callee.getName().contains("<clinit>"))
+                        if (callee.getName().contains("<clinit>"))
                             continue;
 
                         // empty function
-                        if(this.icfg.isExitStmt(callee.getActiveBody().getUnits().getFirst()))
+                        if (this.icfg.isExitStmt(callee.getActiveBody().getUnits().getFirst()))
                             continue;
 
                         // recursive invocation
-                        if(callee == body.getMethod())
-                        {
+                        if (callee == body.getMethod()) {
                             continue;
                         }
 
@@ -163,28 +167,25 @@ public class Checker extends SceneTransformer{
                         <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class)>
                          */
 
-//                        if(callee.toString().contains("androidx.lifecycle.a: androidx.lifecycle.a$a"))
-//                        {
-//                            System.out.println("GOCHA");
-//                            System.out.println(unit.getJavaSourceStartLineNumber());
-//                            System.out.println(callee.toString());
-//                            System.out.println(body.getMethod().toString());
-//
-//                        }
+                        //                        if(callee.toString().contains("androidx.lifecycle.a: androidx.lifecycle.a$a"))
+                        //                        {
+                        //                            System.out.println("GOCHA");
+                        //                            System.out.println(unit.getJavaSourceStartLineNumber());
+                        //                            System.out.println(callee.toString());
+                        //                            System.out.println(body.getMethod().toString());
+                        //
+                        //                        }
 
                         boolean bc = false;
-                        for(String b: HuaweiFastAppConfig.getBlacklist())
-                        {
-                            if(callee.toString().startsWith(b))
-                            {
+                        for (String b : HuaweiFastAppConfig.getBlacklist()) {
+                            if (callee.toString().startsWith(b)) {
                                 bc = true;
                             }
                         }
-                        if(bc) continue;
+                        if (bc) continue;
 
                         // Do not inflate the sanitizer and target node to shrink the resource consumption.
-                        if(callee == this.methodSanitizer || callee == this.methodTarget)
-                        {
+                        if (callee == this.methodSanitizer || callee == this.methodTarget) {
                             continue;
                         }
                         this.collectConnectTuple(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
@@ -229,65 +230,76 @@ public class Checker extends SceneTransformer{
                 logInfo.warning("Change the shadow unit scheme.");
             }
 
-            // logInfo.info("Walk: " + unit.toString());
+            /*
+            if(unit.toString().contains("lr")) {
+                logInfo.info("Walk: " + unit.toString());
+                System.out.println(unit instanceof InvokeStmt);
+            }
+            $r10 = staticinvoke <lr: java.lang.String a(com.taobao.weex.WXSDKInstance,java.lang.String)>($r9, $r8)
+            false
+             */
 
-            if(unit instanceof InvokeStmt) {
-                // System.out.println("[I]" + u.toString());
-                // logInfo.info("Call stmt: " + unit.toString());
-                Iterator<Edge> iterCallees = cg.edgesOutOf(unit);
-                while (iterCallees.hasNext()) {
-                    SootMethod callee = iterCallees.next().tgt().method();
-                    // Since the framework APIs will inflate the graph greatly, I filter out the these APIs firstly.
-                    if (callee.getDeclaringClass().isApplicationClass()) {
-                        // native method?
-                        // <com.facebook.imagepipeline.memory.NativeMemoryChunk: void close()>
-                        if(callee.hasActiveBody() == false)
-                            continue;
-                        // if(true) {
-                        // logInfo.info("Application class: " + callee.toString());
-                        // System.out.println("[I] -> " + callee.toString());
-                        /*
-                        Special case:
-                        $r15 = staticinvoke <com.huawei.fastapp.core.l: com.huawei.fastapp.core.l$a e()>()
-                        -> <com.huawei.fastapp.core.l: com.huawei.fastapp.core.l$a e()>
-                        -> <com.huawei.fastapp.core.l: void <clinit>()>
+            Iterator<Edge> iterCallees = cg.edgesOutOf(unit);
+            while (iterCallees.hasNext()) {
+                SootMethod callee = iterCallees.next().tgt().method();
+                // Since the framework APIs will inflate the graph greatly, I filter out the these APIs firstly.
+                if (callee.getDeclaringClass().isApplicationClass()) {
+                    // native method?
+                    // <com.facebook.imagepipeline.memory.NativeMemoryChunk: void close()>
+                    if (callee.hasActiveBody() == false)
+                        continue;
+                    // if(true) {
+                    // logInfo.info("Application class: " + callee.toString());
+                    // System.out.println("[I] -> " + callee.toString());
+                    /*
+                    Special case:
+                    $r15 = staticinvoke <com.huawei.fastapp.core.l: com.huawei.fastapp.core.l$a e()>()
+                    -> <com.huawei.fastapp.core.l: com.huawei.fastapp.core.l$a e()>
+                    -> <com.huawei.fastapp.core.l: void <clinit>()>
 
-                        One anchor for two calls will make the problem complex, I take a simplified solution for this case. Should fix later.
-                         */
-                        if (callee.getName().contains("<clinit>"))
-                            continue;
+                    One anchor for two calls will make the problem complex, I take a simplified solution for this case. Should fix later.
+                     */
+                    if (callee.getName().contains("<clinit>"))
+                        continue;
 
-                        // empty function
-                        if (callee.getActiveBody().getUnits().getFirst() instanceof ReturnStmt ||
-                                callee.getActiveBody().getUnits().getFirst() instanceof ReturnVoidStmt ||
-                                callee.getActiveBody().getUnits().getFirst() instanceof RetStmt
-                        )
-                            continue;
+                    // empty function
+                    if (callee.getActiveBody().getUnits().getFirst() instanceof ReturnStmt ||
+                            callee.getActiveBody().getUnits().getFirst() instanceof ReturnVoidStmt ||
+                            callee.getActiveBody().getUnits().getFirst() instanceof RetStmt
+                    )
+                        continue;
 
-                        // recursive invocation
-                        if (callee == body.getMethod()) {
-                            continue;
-                        }
-
-                        boolean bc = false;
-                        for(String b: HuaweiFastAppConfig.getBlacklist())
-                        {
-                            if(callee.toString().startsWith(b))
-                            {
-                                bc = true;
-                            }
-                        }
-                        if(bc) continue;
-
-                        // Do not inflate the sanitizer and target node to shrink the resource consumption.
-                        if (callee == this.methodSanitizer || callee == this.methodTarget) {
-                            continue;
-                        }
-
-                        this.collectConnectTupleCG(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
+                    // recursive invocation
+                    if (callee == body.getMethod()) {
+                        continue;
                     }
+
+                    /*
+                    // other indirect recursive invocation case, I build a black list to solve this problem temporarily
+                    <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class)> ->
+                    <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class,java.lang.reflect.Method[])>
+
+                    <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class,java.lang.reflect.Method[])> ->
+                    <androidx.lifecycle.a: androidx.lifecycle.a$a a(java.lang.Class)>
+                     */
+
+                    boolean bc = false;
+                    for (String b : HuaweiFastAppConfig.getBlacklist()) {
+                        if (callee.toString().startsWith(b)) {
+                            bc = true;
+                        }
+                    }
+                    if (bc) continue;
+
+                    // Do not inflate the sanitizer and target node to shrink the resource consumption.
+                    if (callee == this.methodSanitizer || callee == this.methodTarget) {
+                        continue;
+                    }
+
+                    this.collectConnectTupleCG(callee.getActiveBody(), shadowUnit, shadowBody.getUnits().getSuccOf(shadowUnit), deepth++);
                 }
             }
+
             if(unit instanceof ReturnStmt ||
                     unit instanceof ReturnVoidStmt ||
                     unit instanceof RetStmt){
@@ -295,6 +307,7 @@ public class Checker extends SceneTransformer{
                 if(parentUnitSucc != null)
                     this.exitStmtWorkList.put(shadowUnit, parentUnitSucc);
             }
+
         }
         return shadowBody;
     }
@@ -365,7 +378,8 @@ public class Checker extends SceneTransformer{
         Iterator<Unit> units = unitGraph.iterator();
 //        while(units.hasNext()) {
 //            Unit u = units.next();
-//            if(u.toString().contains("getExifFromAttributes"))
+//            System.out.println(u.toString());
+//            if(u.toString().contains("c("))
 //            {
 //                logInfo.info("GOCHA");
 //                logInfo.info("CheckDominate: " + u.toString());
@@ -389,11 +403,11 @@ public class Checker extends SceneTransformer{
         }
 
         if(lstUnitSanitizers.size() == 0) {
-            logInfo.warning("Can't find sanitizer: " + stringSanitizer + ", adjust the sanitizer definition or set the threshold of MaxDeepth.");
+            logInfo.warning("Can't find sanitizer: " + stringSanitizer + ", adjust the sanitizer definition.");
             return;
         }
         if(lstUnitTargets.size() == 0) {
-            logInfo.warning("Can't find target: " + stringTarget + ", adjust the target definition or set the threshold of MaxDeepth");
+            logInfo.warning("Can't find target: " + stringTarget + ", adjust the target definition");
             return;
         }
 
@@ -413,15 +427,22 @@ public class Checker extends SceneTransformer{
 
     private SootMethod findMethod(String c, String m)
     {
-        if (Scene.v().containsClass(c))
-        {
+        if (Scene.v().containsClass(c)) {
             if(Scene.v().getSootClass(c).declaresMethod(m))
                 return Scene.v().getSootClass(c).getMethod(m);
-            else
+            else {
+                for (SootMethod am: Scene.v().getSootClass(c).getMethods()) {
+                    logInfo.warning("Alternative method: " + am.getSignature());
+                }
                 return null;
+            }
         }
-        else
-        {
+        else {
+            for (SootClass ac: Scene.v().getClasses()) {
+                // if(ac.toString().contains("lr"))
+                logInfo.warning("Alternative class: " + ac.toString());
+            }
+
             return null;
         }
     }

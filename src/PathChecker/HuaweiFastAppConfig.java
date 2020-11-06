@@ -19,8 +19,11 @@ public class HuaweiFastAppConfig {
         entries.put("com.huawei.fastapp.api.module.image.ImageModule",
                 "void getExifAttributes(com.alibaba.fastjson.JSONObject,com.taobao.weex.bridge.JSCallback)");
 
+//        sanitizer.add("lr");
+//        sanitizer.add("java.lang.String a(com.taobao.weex.WXSDKInstance,java.lang.String)");
+
         sanitizer.add("lr");
-        sanitizer.add("java.lang.String a(com.taobao.weex.WXSDKInstance,java.lang.String)");
+        sanitizer.add("java.lang.String c(com.huawei.fastapp.core.FastSDKInstance,java.lang.String)");
 
         target.add("com.huawei.fastapp.api.module.image.ImageModule");
         target.add("void getExifFromAttributes(androidx.exifinterface.media.ExifInterface,java.util.HashMap[],com.alibaba.fastjson.JSONObject)");

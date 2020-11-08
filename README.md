@@ -34,4 +34,5 @@ Be cautious not to dumpGraph all the time, or it will crash the application.
 https://arpith.xyz/2016/05/insertonedge-soot/  
 https://github.com/soot-oss/soot/wiki/Creating-a-class-from-scratch#write-to-class-file  
 https://github.com/secure-software-engineering/FlowDroid/releases  
-https://github.com/Sable/android-platforms
+https://github.com/Sable/android-platforms  
+https://www.sable.mcgill.ca/soot/tutorial/phase/phase.html
